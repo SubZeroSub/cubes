@@ -1,14 +1,12 @@
 const CACHE_NAME = 'cube-app-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/make_points.html',
-  '/styles.css',
-  '/app.js',
-  '/data/cubes.json',
-  '/images/cube.png',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  '/cubes/',
+  '/cubes/index.html',
+  '/cubes/app.js',
+  '/cubes/data/cubes.json',
+  '/cubes/images/cube.png',
+  '/cubes/icons/icon-192x192.png',
+  '/cubes/icons/icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {
