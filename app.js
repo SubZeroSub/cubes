@@ -21,7 +21,7 @@ function loadCube() {
 
   navigator.clipboard.readText()
     .then(text => {
-      console.log('Clipboard text:', text); // Отладка
+      console.log('Clipboard text:', text);
       const numbers = text.trim().split(' ').map(Number).filter(n => !isNaN(n));
       if (numbers.length !== 6) {
         status.textContent = 'Clipboard must contain exactly 6 numbers separated by spaces (e.g., "1 3 5 2 2 3")';
