@@ -1,7 +1,7 @@
 [
   {
     "image_id": "cube",
-    "image_url": "/images/cube.png",
+    "image_url": "/cubes/images/cube.png",
     "faces": [
       {
         "face": "cube1_face",
