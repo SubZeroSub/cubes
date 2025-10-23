@@ -1,7 +1,7 @@
 // Регистрация Service Worker
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('/cubes/service-worker.js')
       .then(reg => console.log('Service Worker registered'))
       .catch(err => console.error('Service Worker error:', err));
   });
@@ -21,25 +21,25 @@ function loadCube() {
 
   navigator.clipboard.readText()
     .then(text => {
-      console.log('Clipboard read:', text);
+      console.log('Clipboard text:', text); // Отладка
       const numbers = text.trim().split(' ').map(Number).filter(n => !isNaN(n));
       if (numbers.length !== 6) {
         status.textContent = 'Clipboard must contain exactly 6 numbers separated by spaces (e.g., "1 3 5 2 2 3")';
-        console.error('Invalid clipboard data:', text);
+        console.error('Invalid clipboard data:', numbers);
         return Promise.reject('Invalid clipboard data');
       }
 
-      return fetch('/data/cubes.json')
+      return fetch('/cubes/data/cubes.json')
         .then(response => {
           if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
           return response.json();
         })
         .then(data => {
-          console.log('JSON loaded:', data);
+          console.log('JSON data:', data);
           const cube = data.find(item => item.image_id === 'cube');
           if (!cube) {
             status.textContent = 'Cube not found!';
-            console.error('Cube not found in JSON');
+            console.error('Cube not found in JSON:', data);
             return Promise.reject('Cube not found');
           }
           return { numbers, cube };
@@ -84,6 +84,6 @@ function loadCube() {
     })
     .catch(err => {
       console.error('Error in loadCube:', err);
-      status.textContent = `Error: ${err.message}. Try again or check browser settings.`;
+      status.textContent = `Error: ${err.message || err}. Try again or check browser settings.`;
     });
 }
