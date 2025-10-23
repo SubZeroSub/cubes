@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Разметка кубиков → cubes.json</title>
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #eee;
+      font-family: system-ui;
+      text-align: center;
+    }
+    canvas {
+      max-width: 100%;
+      height: auto;
+      cursor: crosshair;
+      background: #000;
+      margin-top: 10px;
+    }
+    #panel {
+      padding: 10px;
+      position: sticky;
+      top: 0;
+      background: #111;
+      z-index: 10;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 14px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      background: #333;
+      color: #fff;
+      cursor: pointer;
+    }
+    input[type=file] {
+      display: none;
+    }
+    label {
+      background: #444;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="panel">
+    <label><input type="file" id="file" accept="image/*">📷 Загрузить фото</label>
+    <button id="undo">↩ Отменить точку</button>
+    <button id="reset">♻ Очистить всё</button>
+    <button id="download">💾 Скачать cubes.json</button>
+    <p>Кликай 4 угла каждой грани кубика по часовой стрелке. Всего 6 кубиков (24 точки).</p>
+  </div>
+  <canvas id="cv"></canvas>
+
+  <script>
+    const cv = document.getElementById('cv'), ctx = cv.getContext('2d');
+    let img = null, points = [], slots = [], currentSlot = 0;
+
+    function resizeCanvas() {
+      if (!img) return;
+      const scale = Math.min(window.innerWidth / img.width, window.innerHeight / img.height);
+      cv.width = img.width * scale;
+      cv.height = img.height * scale;
+      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      draw();
+    }
+
+    function draw() {
+      if (!img) return;
+      ctx.clearRect(0, 0, img.width, img.height);
+      ctx.drawImage(img, 0, 0);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'lime';
+      ctx.fillStyle = 'rgba(0, 255, 0, .3)';
+      for (let i = 0; i < slots.length; i++) {
+        const s = slots[i];
+        ctx.beginPath();
+        ctx.moveTo(s[0].x, s[0].y);
+        for (let j = 1; j < s.length; j++) ctx.lineTo(s[j].x, s[j].y);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fill();
+        ctx.fillStyle = 'yellow';
+        ctx.font = '24px sans-serif';
+        ctx.fillText(i + 1, s[0].x + 10, s[0].y + 30);
+        ctx.fillStyle = 'rgba(0, 255, 0, .3)';
+      }
+      for (let p of points) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = 'red';
+        ctx.fill();
+      }
+    }
+
+    cv.onclick = e => {
+      if (!img) return;
+      const rect = cv.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (img.width / cv.width);
+      const y = (e.clientY - rect.top) * (img.height / cv.height);
+      points.push({ x, y });
+      if (points.length === 4) {
+        slots.push(points);
+        points = [];
+        currentSlot++;
+        if (currentSlot === 6) alert("Все 6 кубиков отмечены! Можно скачать cubes.json.");
+      }
+      draw();
+    };
+
+    document.getElementById('undo').onclick = () => {
+      if (points.length > 0) points.pop();
+      else if (slots.length > 0) { points = slots.pop(); currentSlot--; }
+      draw();
+    };
+
+    document.getElementById('reset').onclick = () => {
+      points = [];
+      slots = [];
+      currentSlot = 0;
+      draw();
+    };
+
+    document.getElementById('file').onchange = e => {
+      const f = e.target.files[0];
+      if (!f) return;
+      const r = new FileReader();
+      r.onload = ev => {
+        img = new Image();
+        img.onload = () => { resizeCanvas(); };
+        img.src = ev.target.result;
+      };
+      r.readAsDataURL(f);
+    };
+
+    window.onresize = resizeCanvas;
+
+    document.getElementById('download').onclick = () => {
+      if (!img) { alert("Сначала загрузите фото"); return; }
+      if (slots.length < 6) { alert("Отметьте все 6 кубиков (24 точки)"); return; }
+
+      // Вычисляем bounding box для каждой грани
+      const faces = slots.map((slot, index) => {
+        const xs = slot.map(p => p.x);
+        const ys = slot.map(p => p.y);
+        const minX = Math.min(...xs);
+        const minY = Math.min(...ys);
+        const maxX = Math.max(...xs);
+        const maxY = Math.max(...ys);
+        return {
+          face: `cube${index + 1}_face`,
+          x: minX,
+          y: minY,
+          width: maxX - minX,
+          height: maxY - minY,
+          number: index + 1
+        };
+      });
+
+      // Формируем JSON, совместимый с PWA
+      const data = [{
+        image_id: "cube",
+        image_url: "/images/cube.png",
+        faces: faces
+      }];
+
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = "cubes.json";
+      a.click();
+    };
+  </script>
+</body>
+</html>
